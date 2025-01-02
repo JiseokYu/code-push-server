@@ -5,7 +5,7 @@ import * as q from "q";
 import * as stream from "stream";
 import * as storage from "./storage";
 
-import { Storage as GCPRawStorage } from "@google-cloud/storage";
+import { Bucket, Storage as GCPRawStorage } from "@google-cloud/storage";
 import { Firestore } from "@google-cloud/firestore";
 import { v4 as uuidv4 } from "uuid";
 import { DeploymentInfo } from "./storage";
@@ -16,12 +16,10 @@ interface AppPointer {
 }
 
 export class GCPStorage implements storage.Storage {
-  private static HISTORY_BLOB_BUCKET_NAME = process.env.GOOGLE_HISTORY_BLOB_BUCKET_NAME;
   private static MAX_PACKAGE_HISTORY_LENGTH = 50;
-  private static FIRESTORE_DATABASE_ID = process.env.GOOGLE_FIRESTORE_DATABASE_ID;
 
   private _firestore: Firestore;
-  private _storage: GCPRawStorage;
+  private _storage_bucket: Bucket;
   private _setupPromise: q.Promise<void>;
 
   constructor(projectId?: string) {
@@ -42,7 +40,7 @@ export class GCPStorage implements storage.Storage {
   }
 
   private blobHealthCheck(): q.Promise<void> {
-    const file = this._storage.bucket(GCPStorage.HISTORY_BLOB_BUCKET_NAME).file("health");
+    const file = this._storage_bucket.file("health");
     return q.Promise<void>((resolve, reject) => {
       file
         .download()
@@ -68,17 +66,19 @@ export class GCPStorage implements storage.Storage {
           throw new Error("GCP credentials not set");
       }
       options.projectId = projectId || process.env.GOOGLE_CLOUD_PROJECT;
-      options.databaseId = GCPStorage.FIRESTORE_DATABASE_ID;
+      options.databaseId = process.env.FIRESTORE_DATABASE_ID;
     }
 
+    const bucketName = process.env.GOOGLE_HISTORY_BLOB_BUCKET_NAME;
     this._firestore = new Firestore(options);
-    this._storage = new GCPRawStorage(options);
+    const _storage = new GCPRawStorage(options);
+    this._storage_bucket = _storage.bucket(bucketName);
 
     return q.Promise<void>((resolve, reject) => {
       q.all([
         this._firestore.collection("health").doc("health").set({ status: "healthy" }),
-        this._storage.createBucket(GCPStorage.HISTORY_BLOB_BUCKET_NAME).then(() => {
-          return this._storage.bucket(GCPStorage.HISTORY_BLOB_BUCKET_NAME).file("health").save("health");
+        _storage.createBucket(bucketName, () => {
+          return this._storage_bucket.file("health").save("health");
         }),
       ])
         .then(() => resolve())
@@ -468,7 +468,7 @@ export class GCPStorage implements storage.Storage {
       })
       .then(() => {
         // Initialize empty package history
-        return this._storage.bucket(GCPStorage.HISTORY_BLOB_BUCKET_NAME).file(deployment.id).save("[]");
+        return this._storage_bucket.file(deployment.id).save("[]");
       })
       .then(() => deployment.id)
       .catch(GCPStorage.gcpErrorHandler);
@@ -614,7 +614,7 @@ export class GCPStorage implements storage.Storage {
     return this._setupPromise
       .then(() => this.getDeployment(accountId, appId, deploymentId))
       .then(() => {
-        return this._storage.bucket(GCPStorage.HISTORY_BLOB_BUCKET_NAME).file(deploymentId).download();
+        return this._storage_bucket.file(deploymentId).download();
       })
       .then(([content]) => JSON.parse(content.toString()))
       .catch(GCPStorage.gcpErrorHandler);
@@ -624,7 +624,7 @@ export class GCPStorage implements storage.Storage {
     return this._setupPromise
       .then(() => this.getDeploymentInfo(deploymentKey))
       .then((info) => {
-        return this._storage.bucket(GCPStorage.HISTORY_BLOB_BUCKET_NAME).file(info.deploymentId).download();
+        return this._storage_bucket.file(info.deploymentId).download();
       })
       .then(([content]) => JSON.parse(content.toString()))
       .catch(GCPStorage.gcpErrorHandler);
@@ -638,7 +638,7 @@ export class GCPStorage implements storage.Storage {
         this.updateDeployment(accountId, appId, deployment);
       })
       .then(() => {
-        return this._storage.bucket(GCPStorage.HISTORY_BLOB_BUCKET_NAME).file(deploymentId).save("[]");
+        return this._storage_bucket.file(deploymentId).save("[]");
       })
       .then(() => void 0)
       .catch(GCPStorage.gcpErrorHandler);
@@ -656,7 +656,7 @@ export class GCPStorage implements storage.Storage {
         this.updateDeployment(accountId, appId, { id: deploymentId, package: history[history.length - 1] } as storage.Deployment);
       })
       .then(() => {
-        return this._storage.bucket(GCPStorage.HISTORY_BLOB_BUCKET_NAME).file(deploymentId).save(JSON.stringify(history));
+        return this._storage_bucket.file(deploymentId).save(JSON.stringify(history));
       })
       .then(() => void 0)
       .catch(GCPStorage.gcpErrorHandler);
@@ -707,7 +707,7 @@ export class GCPStorage implements storage.Storage {
   public addBlob(blobId: string, stream: stream.Readable, streamLength: number): q.Promise<string> {
     return this._setupPromise
       .then(() => {
-        const file = this._storage.bucket(GCPStorage.HISTORY_BLOB_BUCKET_NAME).file(blobId);
+        const file = this._storage_bucket.file(blobId);
         return new Promise((resolve, reject) => {
           stream
             .pipe(file.createWriteStream())
@@ -721,7 +721,7 @@ export class GCPStorage implements storage.Storage {
   public getBlobUrl(blobId: string): q.Promise<string> {
     return this._setupPromise
       .then(() => {
-        const file = this._storage.bucket(GCPStorage.HISTORY_BLOB_BUCKET_NAME).file(blobId);
+        const file = this._storage_bucket.file(blobId);
         return file.getSignedUrl({
           action: "read",
           expires: Date.now() + 15 * 60 * 1000, // URL expires in 15 minutes
@@ -734,7 +734,7 @@ export class GCPStorage implements storage.Storage {
   public removeBlob(blobId: string): q.Promise<void> {
     return this._setupPromise
       .then(() => {
-        return this._storage.bucket(GCPStorage.HISTORY_BLOB_BUCKET_NAME).file(blobId).delete();
+        return this._storage_bucket.file(blobId).delete();
       })
       .then(() => void 0)
       .catch(GCPStorage.gcpErrorHandler);
