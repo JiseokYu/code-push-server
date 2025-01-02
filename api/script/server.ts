@@ -3,9 +3,11 @@
 
 import * as express from "express";
 import * as defaultServer from "./default-server";
+import { overrideSecrets } from "./secret";
 
 const https = require("https");
 const fs = require("fs");
+overrideSecrets(fs);
 
 defaultServer.start(function (err: Error, app: express.Express) {
   if (err) {
