@@ -39,9 +39,7 @@ interface EmailAccount {
 }
 
 export class PassportAuthentication {
-  private static AZURE_AD_PROVIDER_NAME = "azure-ad";
   private static GITHUB_PROVIDER_NAME = "github";
-  private static MICROSOFT_PROVIDER_NAME = "microsoft";
 
   private _cookieSessionMiddleware: RequestHandler;
   private _serverUrl: string;
@@ -153,17 +151,7 @@ export class PassportAuthentication {
       this.setupGitHubRoutes(router, gitHubClientId, gitHubClientSecret);
     }
 
-    // See https://msdn.microsoft.com/en-us/library/hh243649.aspx for more information.
-    // MICROSOFT_CLIENT_ID:     The client ID you received from Microsoft when registering an app.
-    // MICROSOFT_CLIENT_SECRET: The client secret you received from Microsoft when registering an app.
-    const microsoftClientId: string = process.env["MICROSOFT_CLIENT_ID"];
-    const microsoftClientSecret: string = process.env["MICROSOFT_CLIENT_SECRET"];
-    const isMicrosoftAuthenticationEnabled: boolean = !!this._serverUrl && !!microsoftClientId && !!microsoftClientSecret;
-
-    if (isMicrosoftAuthenticationEnabled) {
-      this.setupMicrosoftRoutes(router, microsoftClientId, microsoftClientSecret);
-      this.setupAzureAdRoutes(router, microsoftClientId, microsoftClientSecret);
-    }
+    const isMicrosoftAuthenticationEnabled = false;
 
     router.get("/auth/login", this._cookieSessionMiddleware, (req: Request, res: Response): any => {
       req.session["hostname"] = req.query.hostname;
@@ -220,12 +208,8 @@ export class PassportAuthentication {
 
   private static getProviderId(account: storage.Account, provider: string): string {
     switch (provider) {
-      case PassportAuthentication.AZURE_AD_PROVIDER_NAME:
-        return account.azureAdId;
       case PassportAuthentication.GITHUB_PROVIDER_NAME:
         return account.gitHubId;
-      case PassportAuthentication.MICROSOFT_PROVIDER_NAME:
-        return account.microsoftId;
       default:
         throw new Error("Unrecognized provider");
     }
@@ -233,14 +217,8 @@ export class PassportAuthentication {
 
   private static setProviderId(account: storage.Account, provider: string, id: string): void {
     switch (provider) {
-      case PassportAuthentication.AZURE_AD_PROVIDER_NAME:
-        account.azureAdId = id;
-        return;
       case PassportAuthentication.GITHUB_PROVIDER_NAME:
         account.gitHubId = id;
-        return;
-      case PassportAuthentication.MICROSOFT_PROVIDER_NAME:
-        account.microsoftId = id;
         return;
       default:
         throw new Error("Unrecognized provider");
@@ -302,13 +280,7 @@ export class PassportAuthentication {
         }
 
         const emailAddress: string = PassportAuthentication.getEmailAddress(user);
-        if (!emailAddress && providerName === PassportAuthentication.MICROSOFT_PROVIDER_NAME) {
-          const message: string =
-            "You've successfully signed in your Microsoft account, but we couldn't get an email address from it." +
-            "<br/>Please fill the basic information (i.e. First/Last name, Email address) for your Microsoft account in case of absence, then try to run 'code-push-standalone login' again.";
-          restErrorUtils.sendForbiddenPage(res, message);
-          return;
-        } else if (!emailAddress) {
+        if (!emailAddress) {
           restErrorUtils.sendUnknownError(
             res,
             new Error(`Couldn't get an email address from the ${providerName} OAuth provider for user ${JSON.stringify(user)}`),
@@ -442,7 +414,7 @@ export class PassportAuthentication {
       clientID: gitHubClientId,
       clientSecret: gitHubClientSecret,
       callbackURL: this.getCallbackUrl(providerName),
-      scope: ["user:email"],
+      scope: ["email"],
       state: true,
     };
 
@@ -450,66 +422,6 @@ export class PassportAuthentication {
       new passportGitHub.Strategy(
         options,
         (accessToken: string, refreshToken: string, profile: passportGitHub.Profile, done: (err?: any, user?: any) => void): void => {
-          done(/*err*/ null, profile);
-        }
-      )
-    );
-
-    this.setupCommonRoutes(router, providerName, strategyName);
-  }
-
-  private setupMicrosoftRoutes(router: Router, microsoftClientId: string, microsoftClientSecret: string): void {
-    const providerName = PassportAuthentication.MICROSOFT_PROVIDER_NAME;
-    const strategyName = "windowslive";
-    const options: passportWindowsLive.IStrategyOptions = {
-      clientID: microsoftClientId,
-      clientSecret: microsoftClientSecret,
-      callbackURL: this.getCallbackUrl(providerName),
-      scope: ["wl.signin", "wl.emails"],
-      state: true,
-    };
-
-    passport.use(
-      new passportWindowsLive.Strategy(
-        options,
-        (accessToken: string, refreshToken: string, profile: passport.Profile, done: (error: any, user: any) => void): void => {
-          done(/*err*/ null, profile);
-        }
-      )
-    );
-
-    this.setupCommonRoutes(router, providerName, strategyName);
-  }
-
-  private setupAzureAdRoutes(router: Router, microsoftClientId: string, microsoftClientSecret: string): void {
-    const providerName = PassportAuthentication.AZURE_AD_PROVIDER_NAME;
-    const strategyName = "azuread-openidconnect";
-    const options: any = {
-      redirectUrl: this.getCallbackUrl(providerName),
-      clientID: microsoftClientId,
-      clientSecret: microsoftClientSecret,
-      identityMetadata: `https://login.microsoftonline.com/${
-        process.env["MICROSOFT_TENANT_ID"] || "common"
-      }/v2.0/.well-known/openid-configuration`,
-      responseMode: "query",
-      responseType: "code",
-      scope: ["email", "profile"],
-      skipUserProfile: true, // Should be set to true for Azure AD
-      validateIssuer: false, // We allow AD authentication across multiple tenants
-      allowHttpForRedirectUrl: true,
-    };
-
-    passport.use(
-      new passportActiveDirectory.OIDCStrategy(
-        options,
-        (
-          iss: string,
-          sub: string,
-          profile: passport.Profile,
-          accessToken: string,
-          refreshToken: string,
-          done: (error: any, user: any) => void
-        ) => {
           done(/*err*/ null, profile);
         }
       )

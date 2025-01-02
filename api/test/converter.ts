@@ -21,9 +21,7 @@ describe("Converter", () => {
 
     var cast = <storageTypes.Account>(<any>restAccount);
     assert.equal(cast.id, undefined);
-    assert.equal(cast.azureAdId, undefined);
     assert.equal(cast.gitHubId, undefined);
-    assert.equal(cast.microsoftId, undefined);
 
     done();
   });

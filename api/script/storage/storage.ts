@@ -30,6 +30,7 @@ export module Permissions {
 }
 
 export interface StorageError extends error.CodePushError {
+  type: "StorageError";
   code: ErrorCode;
 }
 
@@ -37,12 +38,10 @@ export interface StorageError extends error.CodePushError {
  * Specifies an account with the power to manage apps, deployments and packages
  */
 export interface Account {
-  azureAdId?: string;
   /*generated*/ createdTime: number;
   /*const*/ email: string;
   gitHubId?: string;
   /*generated*/ id?: string;
-  microsoftId?: string;
   /*const*/ name: string;
 }
 
@@ -132,12 +131,12 @@ export interface Storage {
   getAccount(accountId: string): Promise<Account>;
   getAccountByEmail(email: string): Promise<Account>;
   getAccountIdFromAccessKey(accessKey: string): Promise<string>;
-  updateAccount(email: string, updates: Account): Promise<void>;
+  updateAccount(email: string, updates: Account): Promise<void>; // TODO: only used in link account
 
   addApp(accountId: string, app: App): Promise<App>;
   getApps(accountId: string): Promise<App[]>;
   getApp(accountId: string, appId: string): Promise<App>;
-  removeApp(accountId: string, appId: string): Promise<void>;
+  removeApp(accountId: string, appId: string): Promise<void>; // TODO:
   transferApp(accountId: string, appId: string, email: string): Promise<void>;
   updateApp(accountId: string, app: App): Promise<void>;
 
@@ -149,7 +148,7 @@ export interface Storage {
   getDeployment(accountId: string, appId: string, deploymentId: string): Promise<Deployment>;
   getDeploymentInfo(deploymentKey: string): Promise<DeploymentInfo>;
   getDeployments(accountId: string, appId: string): Promise<Deployment[]>;
-  removeDeployment(accountId: string, appId: string, deploymentId: string): Promise<void>;
+  removeDeployment(accountId: string, appId: string, deploymentId: string): Promise<void>; // TODO:
   updateDeployment(accountId: string, appId: string, deployment: Deployment): Promise<void>;
 
   commitPackage(accountId: string, appId: string, deploymentId: string, appPackage: Package): Promise<Package>;
@@ -207,6 +206,7 @@ export function isPrototypePollutionKey(key: string): boolean {
 export function storageError(errorCode: ErrorCode, message?: string): StorageError {
   const storageError = <StorageError>error.codePushError(error.ErrorSource.Storage, message);
   storageError.code = errorCode;
+  storageError.type = "StorageError";
   return storageError;
 }
 

@@ -274,8 +274,6 @@ function storageTests(StorageType: new (...args: any[]) => storageTypes.Storage,
           assert.equal(updatedAccount.name, account.name);
           assert.equal(updatedAccount.email, account.email);
           assert.equal(updatedAccount.gitHubId, "2");
-          assert(typeof updatedAccount.azureAdId === "undefined");
-          assert(typeof updatedAccount.microsoftId === "undefined");
         });
     });
 

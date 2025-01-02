@@ -269,9 +269,7 @@ export class AzureStorage implements storage.Storage {
     if (!email) throw new Error("No account email");
     const address: Pointer = Keys.getEmailShortcutAddress(email);
     const updates: any = {
-      azureAdId: updateProperties.azureAdId,
       gitHubId: updateProperties.gitHubId,
-      microsoftId: updateProperties.microsoftId,
     };
 
     return this._setupPromise

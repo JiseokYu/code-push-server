@@ -335,6 +335,9 @@ export function getManagementRouter(config: ManagementConfig): Router {
   });
 
   router.delete("/apps/:appName", (req: Request, res: Response, next: (err?: any) => void): any => {
+    // TODO:
+    res.sendStatus(404);
+    return;
     const accountId: string = req.user.id;
     const appName: string = req.params.appName;
     let appId: string;
@@ -586,6 +589,9 @@ export function getManagementRouter(config: ManagementConfig): Router {
   });
 
   router.delete("/apps/:appName/deployments/:deploymentName", (req: Request, res: Response, next: (err?: any) => void): any => {
+    // TODO:
+    res.sendStatus(404);
+    return;
     const accountId: string = req.user.id;
     const appName: string = req.params.appName;
     const deploymentName: string = req.params.deploymentName;
