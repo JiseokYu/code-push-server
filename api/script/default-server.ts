@@ -110,6 +110,7 @@ export function start(done: (err?: any, server?: express.Express, storage?: Stor
       app.set("etag", false);
       app.set("views", __dirname + "/views");
       app.set("view engine", "ejs");
+      app.set("trust proxy", process.env.TRUST_PROXY === "true");
       app.use("/auth/images/", express.static(__dirname + "/views/images"));
       app.use(api.headers({ origin: process.env.CORS_ORIGIN || "http://localhost:4000" }));
       app.use(api.health({ storage: storage, redisManager: redisManager }));
