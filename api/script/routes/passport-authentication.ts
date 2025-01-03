@@ -84,12 +84,14 @@ export class PassportAuthentication {
     passport.authenticate("bearer", { session: false }, (err: any, user: any) => {
       if (err || !user) {
         if (!err || err.code === storage.ErrorCode.NotFound) {
+          console.log("user not found");
           res
             .status(401)
             .send(
               `The session or access key being used is invalid, please run "code-push-standalone login" again. If you are on an older version of the CLI, you may need to run "code-push-standalone logout" first to clear the session cache.`
             );
         } else if (err.code === storage.ErrorCode.Expired) {
+          console.log("user expired");
           res
             .status(401)
             .send(
