@@ -65,6 +65,7 @@ export class PassportAuthentication {
     passport.use(
       new passportBearer.Strategy((accessKey: string, done: (error: any, user?: any) => void) => {
         console.log("passportBearer.Strategy called");
+        console.log("accessKey: " + accessKey);
         console.log("validation result: " + validationUtils.isValidKeyField(accessKey));
         if (!validationUtils.isValidKeyField(accessKey)) {
           console.log("key field is invalid");
