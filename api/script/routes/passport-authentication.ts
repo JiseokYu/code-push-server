@@ -64,10 +64,12 @@ export class PassportAuthentication {
 
     passport.use(
       new passportBearer.Strategy((accessKey: string, done: (error: any, user?: any) => void) => {
+        console.log("passportBearer.Strategy called");
         if (!validationUtils.isValidKeyField(accessKey)) {
           done(/*err*/ null, /*user*/ false);
           return;
         }
+        console.log("key field is valid");
 
         this._storageInstance
           .getAccountIdFromAccessKey(accessKey)

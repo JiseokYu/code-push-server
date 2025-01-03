@@ -134,6 +134,7 @@ export class GCPStorage implements storage.Storage {
   }
 
   public getAccountIdFromAccessKey(accessKey: string): q.Promise<string> {
+    console.log("getAccountIdFromAccessKey called with accessKey: ", accessKey);
     return this._setupPromise
       .then(() => {
         return this._firestore.collection("accessKey").where("name", "==", accessKey).get();
