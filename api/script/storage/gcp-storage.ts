@@ -66,7 +66,7 @@ export class GCPStorage implements storage.Storage {
           throw new Error("GCP credentials not set");
       }
       options.projectId = projectId || process.env.GOOGLE_CLOUD_PROJECT;
-      options.databaseId = process.env.FIRESTORE_DATABASE_ID;
+      options.databaseId = process.env.GOOGLE_FIRESTORE_DATABASE_ID;
     }
 
     const bucketName = process.env.GOOGLE_HISTORY_BLOB_BUCKET_NAME;
