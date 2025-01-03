@@ -20,6 +20,7 @@ import * as storage from "../storage/storage";
 import * as validationUtils from "../utils/validation";
 
 import Promise = q.Promise;
+import { keyGenerator } from "../utils/rate-limit";
 
 export interface AuthenticationConfig {
   storage: storage.Storage;
@@ -30,6 +31,7 @@ const DEFAULT_SESSION_EXPIRY = 1000 * 60 * 60 * 24 * 60; // 60 days
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 100, // limit each IP to 100 requests per windowMs
+  keyGenerator: keyGenerator,
 });
 
 interface EmailAccount {
