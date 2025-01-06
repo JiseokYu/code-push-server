@@ -134,20 +134,16 @@ export class GCPStorage implements storage.Storage {
   }
 
   public getAccountIdFromAccessKey(accessKey: string): q.Promise<string> {
-    console.log("getAccountIdFromAccessKey called with accessKey: ", accessKey);
     return this._setupPromise
       .then(() => {
         return this._firestore.collection("accessKey").where("name", "==", accessKey).get();
       })
       .then((snapshot) => {
-        console.log("snapshot: ", snapshot);
         if (snapshot.empty) {
           throw storage.storageError(storage.ErrorCode.NotFound);
         }
         const keyData = snapshot.docs[0].data() as storage.AccessKey;
-        console.log("keyData: ", keyData);
         if (new Date().getTime() >= keyData.expires) {
-          console.log("keyData.expires: ", keyData.expires);
           throw storage.storageError(storage.ErrorCode.Expired, "The access key has expired.");
         }
         return keyData.createdBy;

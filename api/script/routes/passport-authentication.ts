@@ -64,7 +64,6 @@ export class PassportAuthentication {
 
     passport.use(
       new passportBearer.Strategy((accessKey: string, done: (error: any, user?: any) => void) => {
-        console.log("accessKey: " + accessKey);
         if (!validationUtils.isValidKeyField(accessKey)) {
           done(/*err*/ null, /*user*/ false);
           return;
@@ -82,18 +81,15 @@ export class PassportAuthentication {
   }
 
   public authenticate(req: Request, res: Response, next: (err?: Error) => void): void {
-    console.log("authenticate called");
     passport.authenticate("bearer", { session: false }, (err: any, user: any) => {
       if (err || !user) {
         if (!err || err.code === storage.ErrorCode.NotFound) {
-          console.log("user not found");
           res
             .status(401)
             .send(
               `The session or access key being used is invalid, please run "code-push-standalone login" again. If you are on an older version of the CLI, you may need to run "code-push-standalone logout" first to clear the session cache.`
             );
         } else if (err.code === storage.ErrorCode.Expired) {
-          console.log("user expired");
           res
             .status(401)
             .send(
