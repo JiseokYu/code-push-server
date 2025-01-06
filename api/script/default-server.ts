@@ -148,7 +148,11 @@ export function start(done: (err?: any, server?: express.Express, storage?: Stor
 
       // overide authorization header of request if proxy is enabled
       app.use((req, res, next) => {
+        console.log(JSON.stringify(req.headers));
         if (req.headers["x-forwarded-authorization"]) {
+          console.log("overiding authorization header");
+          console.log("x-forwarded-authorization: ", req.headers["x-forwarded-authorization"]);
+          console.log("authorization: ", req.headers["authorization"]);
           req.headers["authorizationt"] = req.headers["x-forwarded-authorization"];
         }
         next();
