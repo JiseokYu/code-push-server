@@ -87,7 +87,7 @@ export class PassportAuthentication {
 
   public authenticate(req: Request, res: Response, next: (err?: Error) => void): void {
     console.log("authenticate called");
-    console.log("req: " + JSON.stringify(req));
+    console.log("req headers: " + JSON.stringify(req.headers));
     passport.authenticate("bearer", { session: false }, (err: any, user: any) => {
       if (err || !user) {
         if (!err || err.code === storage.ErrorCode.NotFound) {
