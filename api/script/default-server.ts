@@ -48,7 +48,7 @@ export function start(done: (err?: any, server?: express.Express, storage?: Stor
           console.log("overiding authorization header");
           console.log("x-forwarded-authorization: ", req.headers["x-forwarded-authorization"]);
           console.log("authorization: ", req.headers["authorization"]);
-          req.headers["authorizationt"] = req.headers["x-forwarded-authorization"];
+          req.headers["authorization"] = req.headers["x-forwarded-authorization"] as string;
         }
         next();
       })
