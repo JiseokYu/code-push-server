@@ -151,6 +151,7 @@ export function start(done: (err?: any, server?: express.Express, storage?: Stor
         if (req.headers["x-forwarded-authorization"]) {
           req.headers["authorizationt"] = req.headers["x-forwarded-authorization"];
         }
+        next();
       })
 
       done(null, app, storage);
