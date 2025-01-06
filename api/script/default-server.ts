@@ -40,6 +40,19 @@ export function start(done: (err?: any, server?: express.Express, storage?: Stor
     })
     .then(() => {
       const app = express();
+
+      // overide authorization header of request if proxy is enabled
+      app.use((req, res, next) => {
+        console.log(JSON.stringify(req.headers));
+        if (req.headers["x-forwarded-authorization"]) {
+          console.log("overiding authorization header");
+          console.log("x-forwarded-authorization: ", req.headers["x-forwarded-authorization"]);
+          console.log("authorization: ", req.headers["authorization"]);
+          req.headers["authorizationt"] = req.headers["x-forwarded-authorization"];
+        }
+        next();
+      })
+
       const auth = api.auth({ storage: storage });
       const appInsights = api.appInsights();
       const redisManager = new RedisManager();
@@ -145,18 +158,6 @@ export function start(done: (err?: any, server?: express.Express, storage?: Stor
 
       // Error handler needs to be the last middleware so that it can catch all unhandled exceptions
       app.use(appInsights.errorHandler);
-
-      // overide authorization header of request if proxy is enabled
-      app.use((req, res, next) => {
-        console.log(JSON.stringify(req.headers));
-        if (req.headers["x-forwarded-authorization"]) {
-          console.log("overiding authorization header");
-          console.log("x-forwarded-authorization: ", req.headers["x-forwarded-authorization"]);
-          console.log("authorization: ", req.headers["authorization"]);
-          req.headers["authorizationt"] = req.headers["x-forwarded-authorization"];
-        }
-        next();
-      })
 
       done(null, app, storage);
     })
