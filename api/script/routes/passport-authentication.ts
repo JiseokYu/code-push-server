@@ -64,15 +64,11 @@ export class PassportAuthentication {
 
     passport.use(
       new passportBearer.Strategy((accessKey: string, done: (error: any, user?: any) => void) => {
-        console.log("passportBearer.Strategy called");
         console.log("accessKey: " + accessKey);
-        console.log("validation result: " + validationUtils.isValidKeyField(accessKey));
         if (!validationUtils.isValidKeyField(accessKey)) {
-          console.log("key field is invalid");
           done(/*err*/ null, /*user*/ false);
           return;
         }
-        console.log("key field is valid");
 
         this._storageInstance
           .getAccountIdFromAccessKey(accessKey)
@@ -87,7 +83,6 @@ export class PassportAuthentication {
 
   public authenticate(req: Request, res: Response, next: (err?: Error) => void): void {
     console.log("authenticate called");
-    console.log("req headers: " + JSON.stringify(req.headers));
     passport.authenticate("bearer", { session: false }, (err: any, user: any) => {
       if (err || !user) {
         if (!err || err.code === storage.ErrorCode.NotFound) {
