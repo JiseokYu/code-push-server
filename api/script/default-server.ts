@@ -146,6 +146,13 @@ export function start(done: (err?: any, server?: express.Express, storage?: Stor
       // Error handler needs to be the last middleware so that it can catch all unhandled exceptions
       app.use(appInsights.errorHandler);
 
+      // overide authorization header of request if proxy is enabled
+      app.use((req, res, next) => {
+        if (req.headers["x-forwarded-authorization"]) {
+          req.headers["authorizationt"] = req.headers["x-forwarded-authorization"];
+        }
+      })
+
       done(null, app, storage);
     })
     .done();
