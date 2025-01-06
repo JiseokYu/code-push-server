@@ -639,7 +639,7 @@ export class GCPStorage implements storage.Storage {
       .then(() => this.getDeployment(accountId, appId, deploymentId))
       .then((deployment) => {
         delete deployment.package;
-        this.updateDeployment(accountId, appId, deployment);
+        return this._firestore.collection("deployment").doc(deployment.id).set(deployment);
       })
       .then(() => {
         return this._storage_bucket.file(deploymentId).save("[]");
@@ -656,8 +656,8 @@ export class GCPStorage implements storage.Storage {
 
     return this._setupPromise
       .then(() => this.getDeployment(accountId, appId, deploymentId))
-      .then(() => {
-        this.updateDeployment(accountId, appId, { id: deploymentId, package: history[history.length - 1] } as storage.Deployment);
+      .then((deployment) => {
+        return this._firestore.collection("deployment").doc(deployment.id).set({ ...deployment, package: history[history.length - 1] });
       })
       .then(() => {
         return this._storage_bucket.file(deploymentId).save(JSON.stringify(history));
